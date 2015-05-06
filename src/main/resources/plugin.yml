@@ -1,0 +1,7 @@
+name: BungeeCord MultiConnect Plugin
+version: 1.0
+description: This BungeeCord plugin Enables selected user to connect multiple times.
+author: Claus Niesen
+website: https://github.com/cniesen/BungeeCord_MultiConnect_Plugin
+
+main: com.niesens.bungeecord.multiconnect.Main
