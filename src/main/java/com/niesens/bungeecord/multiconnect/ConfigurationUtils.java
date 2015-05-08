@@ -22,6 +22,6 @@ public class ConfigurationUtils {
             Files.copy(plugin.getResourceAsStream("config.yml"), file.toPath());
         }
 
-        return ConfigurationProvider.getProvider(YamlConfiguration.class).load(new File(plugin.getDataFolder(), "config.yml"));
+        return ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
     }
 }

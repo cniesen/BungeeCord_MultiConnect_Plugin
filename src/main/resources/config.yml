@@ -1,4 +1,6 @@
 OneSubnet: false
-MultiConnectUsers:
+MultiConnectPlayers:
 # - SampleUser1
 # - SampleUser2
+MultiConnectIPs:
+# - 127.0.0.1

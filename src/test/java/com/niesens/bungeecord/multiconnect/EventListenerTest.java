@@ -4,6 +4,9 @@ import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.api.event.PreLoginEvent;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.plugin.PluginDescription;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.protocol.packet.LoginRequest;
 import org.junit.Rule;
@@ -13,10 +16,14 @@ import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class EventListenerTest {
@@ -26,15 +33,24 @@ public class EventListenerTest {
 
     @Test
     public void testMultipleConnectionsUser() throws IOException {
-        testing("SampleUser2");
+        testing("SampleUser2", "login-multiconnect");
     }
 
     @Test
     public void testNormalUser() throws IOException {
-        testing("NormalUser");
+        testing("NormalUser", "login-normal");
     }
 
-    private void testing(String testUser) throws UnknownHostException {
+    @Test
+    public void testMultipleConnectionsIp() throws IOException {
+        setMultiConnectIPs(Arrays.asList("10.10.10.10"));
+        testing("SampleUser2", "login-normal");
+        setMultiConnectIPs(Arrays.asList("10.10.10.10", "10.20.56.123"));
+        testing("SampleUser2", "login-multiconnect");
+        testing("NormalUser", "login-normal");
+    }
+
+    private void testing(String testUser, String expectedLoginType) throws UnknownHostException {
         // Mock event
         PreLoginEvent preLoginEvent = PowerMockito.mock(PreLoginEvent.class);
         InitialHandler initialHandler = PowerMockito.mock(InitialHandler.class);
@@ -51,28 +67,54 @@ public class EventListenerTest {
         BungeeCord bungeeCord = PowerMockito.mock(BungeeCord.class);
         Mockito.when(bungeeCord.getPluginsFolder()).thenReturn(testFolder.getRoot());
         Mockito.when(plugin.getProxy()).thenReturn(bungeeCord);
-        Mockito.when(plugin.getDescription()).thenReturn(new PluginDescription("",null,null,null,null,null,null,null));
+        Mockito.when(plugin.getDescription()).thenReturn(new PluginDescription("", null, null, null, null, null, null, null));
 
         // Trigger event to be tested
         EventListener eventListener = new EventListener(plugin);
         eventListener.onPreLogin(preLoginEvent);
 
         // Verify results
-        if (testUser.equals("SampleUser2")) {
-            Mockito.verify(logger, Mockito.times(3)).info(Matchers.anyString());
+        if (expectedLoginType.equals("login-multiconnect")) {
+            Mockito.verify(logger, Mockito.times(4)).info(Matchers.anyString());
             Mockito.verify(initialHandler).setOnlineMode(false);
             Mockito.verify(loginRequest).setData("N 123-3333");
         } else {
-            Mockito.verify(logger, Mockito.times(2)).info(Matchers.anyString());
+            Mockito.verify(logger, Mockito.times(3)).info(Matchers.anyString());
             Mockito.verify(initialHandler, Mockito.never()).setOnlineMode(Mockito.anyBoolean());
             Mockito.verify(loginRequest, Mockito.never()).setData(Mockito.anyString());
         }
     }
 
     private InetSocketAddress getInetSocketAddress() throws UnknownHostException {
-        byte[] ipAddress = new byte[] {10,20,56,123};
+        byte[] ipAddress = new byte[]{10, 20, 56, 123};
         InetAddress inetAddress = InetAddress.getByAddress("example.com", ipAddress);
         return new InetSocketAddress(inetAddress, 3333);
     }
 
+    private void setMultiConnectIPs(List multiConnectIPs) throws IOException {
+        // Mock plugin
+        Plugin plugin = PowerMockito.mock(Plugin.class);
+        Logger logger = Mockito.mock(Logger.class);
+        Mockito.when(plugin.getLogger()).thenReturn(logger);
+        BungeeCord bungeeCord = PowerMockito.mock(BungeeCord.class);
+        Mockito.when(bungeeCord.getPluginsFolder()).thenReturn(testFolder.getRoot());
+        Mockito.when(plugin.getProxy()).thenReturn(bungeeCord);
+        Mockito.when(plugin.getDescription()).thenReturn(new PluginDescription("", null, null, null, null, null, null, null));
+
+        if (!plugin.getDataFolder().exists()) {
+            plugin.getDataFolder().mkdir();
+        }
+
+        File file = new File(plugin.getDataFolder(), "config.yml");
+
+        if (!file.exists()) {
+            Files.copy(plugin.getResourceAsStream("config.yml"), file.toPath());
+        }
+
+        Configuration configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
+        configuration.set("MultiConnectIPs", multiConnectIPs);
+        ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, file);
+    }
+
 }
+

@@ -23,33 +23,50 @@ public class EventListener implements Listener {
     public void onPreLogin(PreLoginEvent event) {
         InitialHandler handler = (InitialHandler) event.getConnection();
         plugin.getLogger().info(handler.getName() + " from " + handler.getAddress() + " connected.");
-        Set<String> multiConnectUsers = getMultiConnectUsers();
-        plugin.getLogger().info("Allowed MultiConnectUsers are: " + multiConnectUsers);
+        Set<String> multiConnectPlayers = getMultiConnectPlayers();
+        plugin.getLogger().info("Allowed MultiConnectPlayers are: " + multiConnectPlayers);
+        Set<String> multiConnectIPs = getMultiConnectIPs();
+        plugin.getLogger().info("Allowed MultiConnectIPs are: " + (multiConnectIPs.isEmpty() ? "any" : multiConnectIPs));
 
-        if (multiConnectUsers.contains(handler.getName())) {
-            String name;
-
-            if(oneSubnet()) {
-                // Name is "N" + last six digits of ip
-                name = "N " + Byte.toString(handler.getAddress().getAddress().getAddress()[2]) + "-"
-                        + Byte.toString(handler.getAddress().getAddress().getAddress()[3]);
-            } else {
-                // Name is "N" + last three digits of ip + port number
-                name = "N " + Byte.toString(handler.getAddress().getAddress().getAddress()[3]) + "-"
-                        + Integer.toString(handler.getAddress().getPort());
-            }
-
-            plugin.getLogger().info("Allowing multiple connections for " + event.getConnection().getName()
-                    + " with the following user name " + name + ".");
-            handler.setOnlineMode(false);
-            handler.getLoginRequest().setData(name);
+        // check if player is allowed to connect multiple times simultaneously
+        if (!multiConnectPlayers.contains(handler.getName())) {
+            return;
         }
 
+        // check if ip is restricted
+        if (!getMultiConnectIPs().isEmpty() && !getMultiConnectIPs().contains(handler.getAddress().getAddress().getHostAddress())) {
+            return;
+        }
+
+        String name;
+
+        if (oneSubnet()) {
+            // Name is "N" + last six digits of ip
+            name = "N " + Byte.toString(handler.getAddress().getAddress().getAddress()[2]) + "-"
+                    + Byte.toString(handler.getAddress().getAddress().getAddress()[3]);
+        } else {
+            // Name is "N" + last three digits of ip + port number
+            name = "N " + Byte.toString(handler.getAddress().getAddress().getAddress()[3]) + "-"
+                    + Integer.toString(handler.getAddress().getPort());
+        }
+
+        handler.setOnlineMode(false);
+        handler.getLoginRequest().setData(name);
+        plugin.getLogger().info("Allowing multiple connections for " + event.getConnection().getName()
+                + " with the following user name " + name + ".");
     }
 
-    private Set<String> getMultiConnectUsers() {
+    private Set<String> getMultiConnectPlayers() {
         try {
-            return new HashSet(ConfigurationUtils.getConfiguration(plugin).getStringList("MultiConnectUsers"));
+            return new HashSet(ConfigurationUtils.getConfiguration(plugin).getStringList("MultiConnectPlayers"));
+        } catch (IOException e) {
+            return new HashSet();
+        }
+    }
+
+    private Set<String> getMultiConnectIPs() {
+        try {
+            return new HashSet(ConfigurationUtils.getConfiguration(plugin).getStringList("MultiConnectIPs"));
         } catch (IOException e) {
             return new HashSet();
         }
