@@ -33,24 +33,46 @@ public class EventListenerTest {
 
     @Test
     public void testMultipleConnectionsUser() throws IOException {
-        testing("SampleUser2", "login-multiconnect");
+        testing("SampleUser2", "login-multiconnect", false);
+    }
+
+    @Test
+    public void testMultipleConnectionsUserLan() throws IOException {
+        setLan();
+        testing("SampleUser2", "login-multiconnect", true);
     }
 
     @Test
     public void testNormalUser() throws IOException {
-        testing("NormalUser", "login-normal");
+        testing("NormalUser", "login-normal", false);
+    }
+
+    @Test
+    public void testNormalUserLan() throws IOException {
+        setLan();
+        testing("NormalUser", "login-normal", false);
     }
 
     @Test
     public void testMultipleConnectionsIp() throws IOException {
         setMultiConnectIPs(Arrays.asList("10.10.10.10"));
-        testing("SampleUser2", "login-normal");
+        testing("SampleUser2", "login-normal", false);
         setMultiConnectIPs(Arrays.asList("10.10.10.10", "10.20.56.123"));
-        testing("SampleUser2", "login-multiconnect");
-        testing("NormalUser", "login-normal");
+        testing("SampleUser2", "login-multiconnect", false);
+        testing("NormalUser", "login-normal", false);
     }
 
-    private void testing(String testUser, String expectedLoginType) throws UnknownHostException {
+    @Test
+    public void testMultipleConnectionsIpLan() throws IOException {
+        setLan();
+        setMultiConnectIPs(Arrays.asList("10.10.10.10"));
+        testing("SampleUser2", "login-normal", true);
+        setMultiConnectIPs(Arrays.asList("10.10.10.10", "10.20.56.123"));
+        testing("SampleUser2", "login-multiconnect", true);
+        testing("NormalUser", "login-normal", true);
+    }
+
+    private void testing(String testUser, String expectedLoginType, boolean expectLanMode) throws UnknownHostException {
         // Mock event
         PreLoginEvent preLoginEvent = PowerMockito.mock(PreLoginEvent.class);
         InitialHandler initialHandler = PowerMockito.mock(InitialHandler.class);
@@ -77,11 +99,15 @@ public class EventListenerTest {
         if (expectedLoginType.equals("login-multiconnect")) {
             Mockito.verify(logger, Mockito.times(4)).info(Matchers.anyString());
             Mockito.verify(initialHandler).setOnlineMode(false);
-            Mockito.verify(loginRequest).setData("N 123-3333");
+            if (expectLanMode) {
+                Mockito.verify(loginRequest).setData("10.20.56.123");
+            } else {
+                Mockito.verify(loginRequest).setData("N 123-3333");
+            }
         } else {
             Mockito.verify(logger, Mockito.times(3)).info(Matchers.anyString());
             Mockito.verify(initialHandler, Mockito.never()).setOnlineMode(Mockito.anyBoolean());
-            Mockito.verify(loginRequest, Mockito.never()).setData(Mockito.anyString());
+            Mockito.verify(loginRequest, Mockito.never()).setData(testUser);
         }
     }
 
@@ -92,6 +118,22 @@ public class EventListenerTest {
     }
 
     private void setMultiConnectIPs(List multiConnectIPs) throws IOException {
+        File file = getConfigFile();
+
+        Configuration configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
+        configuration.set("MultiConnectIPs", multiConnectIPs);
+        ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, file);
+    }
+
+    private void setLan() throws IOException {
+        File file = getConfigFile();
+
+        Configuration configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
+        configuration.set("LanMode", true);
+        ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, file);
+    }
+
+    private File getConfigFile() throws IOException {
         // Mock plugin
         Plugin plugin = PowerMockito.mock(Plugin.class);
         Logger logger = Mockito.mock(Logger.class);
@@ -111,9 +153,7 @@ public class EventListenerTest {
             Files.copy(plugin.getResourceAsStream("config.yml"), file.toPath());
         }
 
-        Configuration configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
-        configuration.set("MultiConnectIPs", multiConnectIPs);
-        ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, file);
+        return file;
     }
 
 }

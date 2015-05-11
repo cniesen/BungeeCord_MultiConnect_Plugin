@@ -40,10 +40,9 @@ public class EventListener implements Listener {
 
         String name;
 
-        if (oneSubnet()) {
-            // Name is "N" + last six digits of ip
-            name = "N " + Byte.toString(handler.getAddress().getAddress().getAddress()[2]) + "-"
-                    + Byte.toString(handler.getAddress().getAddress().getAddress()[3]);
+        if (lanMode()) {
+            // Name is the ip address
+            name = handler.getAddress().getAddress().getHostAddress();
         } else {
             // Name is "N" + last three digits of ip + port number
             name = "N " + Byte.toString(handler.getAddress().getAddress().getAddress()[3]) + "-"
@@ -58,23 +57,23 @@ public class EventListener implements Listener {
 
     private Set<String> getMultiConnectPlayers() {
         try {
-            return new HashSet(ConfigurationUtils.getConfiguration(plugin).getStringList("MultiConnectPlayers"));
+            return new HashSet<>(ConfigurationUtils.getConfiguration(plugin).getStringList("MultiConnectPlayers"));
         } catch (IOException e) {
-            return new HashSet();
+            return new HashSet<>();
         }
     }
 
     private Set<String> getMultiConnectIPs() {
         try {
-            return new HashSet(ConfigurationUtils.getConfiguration(plugin).getStringList("MultiConnectIPs"));
+            return new HashSet<>(ConfigurationUtils.getConfiguration(plugin).getStringList("MultiConnectIPs"));
         } catch (IOException e) {
-            return new HashSet();
+            return new HashSet<>();
         }
     }
 
-    private boolean oneSubnet() {
+    private boolean lanMode() {
         try {
-            return ConfigurationUtils.getConfiguration(plugin).getBoolean("OneSubnet");
+            return ConfigurationUtils.getConfiguration(plugin).getBoolean("LanMode");
         } catch (IOException e) {
             return false;
         }

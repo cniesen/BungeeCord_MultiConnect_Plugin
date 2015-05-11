@@ -1,4 +1,4 @@
-OneSubnet: false
+LanMode: false
 MultiConnectPlayers:
 # - SampleUser1
 # - SampleUser2
