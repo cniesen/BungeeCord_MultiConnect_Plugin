@@ -5,56 +5,46 @@ import net.md_5.bungee.api.event.PreLoginEvent;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.plugin.PluginDescription;
 import net.md_5.bungee.config.Configuration;
-import net.md_5.bungee.config.ConfigurationProvider;
-import net.md_5.bungee.config.YamlConfiguration;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.protocol.packet.LoginRequest;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class EventListenerTest {
-
-    @Rule
-    public TemporaryFolder testFolder = new TemporaryFolder();
+public class EventListenerTest extends TestBase {
 
     @Test
-    public void testMultipleConnectionsUser() throws IOException {
+    public void testMultipleConnectionsUser() throws IOException, NoSuchAlgorithmException {
         testing("SampleUser2", "login-multiconnect", false);
     }
 
     @Test
-    public void testMultipleConnectionsUserLan() throws IOException {
+    public void testMultipleConnectionsUserLan() throws IOException, NoSuchAlgorithmException {
         setLan();
         testing("SampleUser2", "login-multiconnect", true);
     }
 
     @Test
-    public void testNormalUser() throws IOException {
+    public void testNormalUser() throws IOException, NoSuchAlgorithmException {
         testing("NormalUser", "login-normal", false);
     }
 
     @Test
-    public void testNormalUserLan() throws IOException {
+    public void testNormalUserLan() throws IOException, NoSuchAlgorithmException {
         setLan();
         testing("NormalUser", "login-normal", false);
     }
 
     @Test
-    public void testMultipleConnectionsIp() throws IOException {
+    public void testMultipleConnectionsIp() throws IOException, NoSuchAlgorithmException {
         setMultiConnectIPs(Arrays.asList("10.10.10.10"));
         testing("SampleUser2", "login-normal", false);
         setMultiConnectIPs(Arrays.asList("10.10.10.10", "10.20.56.123"));
@@ -63,7 +53,7 @@ public class EventListenerTest {
     }
 
     @Test
-    public void testMultipleConnectionsIpLan() throws IOException {
+    public void testMultipleConnectionsIpLan() throws IOException, NoSuchAlgorithmException {
         setLan();
         setMultiConnectIPs(Arrays.asList("10.10.10.10"));
         testing("SampleUser2", "login-normal", true);
@@ -72,7 +62,7 @@ public class EventListenerTest {
         testing("NormalUser", "login-normal", true);
     }
 
-    private void testing(String testUser, String expectedLoginType, boolean expectLanMode) throws UnknownHostException {
+    private void testing(String testUser, String expectedLoginType, boolean expectLanMode) throws UnknownHostException, NoSuchAlgorithmException {
         // Mock event
         PreLoginEvent preLoginEvent = PowerMockito.mock(PreLoginEvent.class);
         InitialHandler initialHandler = PowerMockito.mock(InitialHandler.class);
@@ -102,7 +92,7 @@ public class EventListenerTest {
             if (expectLanMode) {
                 Mockito.verify(loginRequest).setData("10.20.56.123");
             } else {
-                Mockito.verify(loginRequest).setData("N 123-3333");
+                Mockito.verify(loginRequest).setData("zVRYf6AvCi94REMB");
             }
         } else {
             Mockito.verify(logger, Mockito.times(3)).info(Matchers.anyString());
@@ -111,49 +101,19 @@ public class EventListenerTest {
         }
     }
 
-    private InetSocketAddress getInetSocketAddress() throws UnknownHostException {
-        byte[] ipAddress = new byte[]{10, 20, 56, 123};
-        InetAddress inetAddress = InetAddress.getByAddress("example.com", ipAddress);
-        return new InetSocketAddress(inetAddress, 3333);
-    }
-
     private void setMultiConnectIPs(List multiConnectIPs) throws IOException {
-        File file = getConfigFile();
-
-        Configuration configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
+        Plugin plugin = mockPlugin();
+        Configuration configuration = ConfigurationUtils.loadConfiguration(plugin);
         configuration.set("MultiConnectIPs", multiConnectIPs);
-        ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, file);
+        ConfigurationUtils.saveConfiguration(plugin, configuration);
     }
 
     private void setLan() throws IOException {
-        File file = getConfigFile();
-
-        Configuration configuration = ConfigurationProvider.getProvider(YamlConfiguration.class).load(file);
+        Plugin plugin = mockPlugin();
+        Configuration configuration = ConfigurationUtils.loadConfiguration(plugin);
         configuration.set("LanMode", true);
-        ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, file);
-    }
+        ConfigurationUtils.saveConfiguration(plugin, configuration);
 
-    private File getConfigFile() throws IOException {
-        // Mock plugin
-        Plugin plugin = PowerMockito.mock(Plugin.class);
-        Logger logger = Mockito.mock(Logger.class);
-        Mockito.when(plugin.getLogger()).thenReturn(logger);
-        BungeeCord bungeeCord = PowerMockito.mock(BungeeCord.class);
-        Mockito.when(bungeeCord.getPluginsFolder()).thenReturn(testFolder.getRoot());
-        Mockito.when(plugin.getProxy()).thenReturn(bungeeCord);
-        Mockito.when(plugin.getDescription()).thenReturn(new PluginDescription("", null, null, null, null, null, null, null));
-
-        if (!plugin.getDataFolder().exists()) {
-            plugin.getDataFolder().mkdir();
-        }
-
-        File file = new File(plugin.getDataFolder(), "config.yml");
-
-        if (!file.exists()) {
-            Files.copy(plugin.getResourceAsStream("config.yml"), file.toPath());
-        }
-
-        return file;
     }
 
 }

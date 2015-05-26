@@ -2,3 +2,4 @@ LanMode: false
 MultiConnectPlayers:
  - SampleUser1
  - SampleUser2
+SecretSalt: i3XACXrpc96HSbCtI8Szh8p1IHM=
