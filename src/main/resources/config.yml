@@ -1,6 +1,13 @@
-LanMode: false
-MultiConnectPlayers:
-# - SampleUser1
-# - SampleUser2
+MultiConnectUsers:
+#  - SampleUser1
+#  - SampleUser2
+
 MultiConnectIPs:
-# - 127.0.0.1
+#  - 127.0.0.1
+
+LanMode: false
+
+LanUsersNames:
+#  127.0.0.1: PapaMiner
+#  192.168.1.15: MamaMiner
+#  129.118.10.114: LittleMiner

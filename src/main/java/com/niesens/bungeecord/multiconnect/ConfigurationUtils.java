@@ -15,7 +15,9 @@ import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class ConfigurationUtils {
@@ -28,9 +30,9 @@ public class ConfigurationUtils {
         ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, getConfigurationFile(plugin));
     }
 
-    public static Set<String> getMultiConnectPlayers(Plugin plugin) {
+    public static Set<String> getMultiConnectUsers(Plugin plugin) {
         try {
-            return new HashSet<>(ConfigurationUtils.loadConfiguration(plugin).getStringList("MultiConnectPlayers"));
+            return new HashSet<>(ConfigurationUtils.loadConfiguration(plugin).getStringList("MultiConnectUsers"));
         } catch (IOException e) {
             return new HashSet<>();
         }
@@ -49,6 +51,14 @@ public class ConfigurationUtils {
             return ConfigurationUtils.loadConfiguration(plugin).getBoolean("LanMode");
         } catch (IOException e) {
             return false;
+        }
+    }
+
+    public static Map getLanUsersNames(Plugin plugin) {
+        try {
+            return (Map) ConfigurationUtils.loadConfiguration(plugin).get("LanUsersNames");
+        } catch (IOException | ClassCastException e) {
+            return new HashMap();
         }
     }
 

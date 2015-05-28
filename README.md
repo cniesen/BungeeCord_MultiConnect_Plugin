@@ -30,17 +30,31 @@ Plugin Configuration
 --------------------
 
 ```
+MultiConnectUsers:
+  - SampleUser1
+  - SampleUser2
+MultiConnectIPs:
+  - 127.0.0.1
 LanMode: false
-MultiConnectPlayers: 
- - SampleUser1
- - SampleUser2
- MultiConnectIPs:
- # - 127.0.0.1
+LanUsersNames:
+  127.0.0.1: PapaMiner
+  12.118.1.15: MamaMiner
+  12.118.10.114: LittleMiner
+ SecretSalt: i3XACXrpc96HSbCtI8Szh8p1IHM=
 ```
-On the first run the plugin will create the config.yml file if one doesn't exist already.  This makes configuration easy.  Start, shutdown, config, and have fun.  By default noone is configured to benefit from the MultiConnect plugin. The config file is located at `bungeecord/plugins/BungeeCord MultiConnect Plugin`.
+On the first run the plugin will create the config.yml file if one doesn't exist already.  This makes configuration easy.  Start, log on once, shutdown, make configuration changes, and have fun.  By default no one is configured to benefit from the MultiConnect plugin. The config file is located at `bungeecord/plugins/BungeeCord MultiConnect Plugin`.
 
-MultiConnectPlayers is the list of Minecraft users that are allowed to connect multiple times. Each user has to be on its own line and must be preceeded by a space, dash, space. 
+**MultiConnectUsers** is the list of Mojang usernamess that are allowed to connect multiple times. Each user has to be on its own line and must be preceded by a space, dash, space. Users not in this list will sign in as a regular Mojang user.  By default this list is empty.
 
-LanMode toggles how the username for MultiConnectPlayers are created.  By default LanMode is false and the player name will be created by the last few digits of the IP and the port number of the client.  The problem with this setting is that port numbers change when reconnecting and a different player name will be assigned. However, the use of port numbers enables multiple connections from the same IP address (i.e. when you're behind your home (nat) router.  
+**MultiConnectIPs** is a list of IPs from which clients are allowed to use the MultiConnect feature by signing in with a username in the MultiConnectUsers list.  Users connecting from other IPs will sign in as a regular Mojang user.  This list is empty by default which allows everybody to use the MultiConnect feature by signing in with a username in the MultiConnectUsers list.
 
-If everybody will have a unique IP then then the LanMode can be set to true. The player name will only be based of the IP and remain the same when reconnecting.  Anyway, if in doubt leave the LanMode false.
+**LanMode** toggles how the username for MultiConnectUsers are created.  By default LanMode is false and the player name will be a hash of the internet address of the player.  The hash provides some obscurity and makes it difficult to determine the players IP address and thus providing some privacy toward other players.  
+When LanMode is true the IP address of the player is used which makes it a nicer username but can't be used across a home (NAT) router.
+
+If everybody will have a unique IP then then the LanMode can be set to true. The player name will be the IP address of the player.  This also allows the usage of the nicer looking LanUserNames.  Anyway, if in doubt leave the LanMode false.
+
+**LanUserNames** are IP and username pairs.  The associated username for the specified IP number will be used in the game.  This allows nice usernames for MultiConnectUsers.  However this feature requires that the LanMode is enabled and thus is not suggested to be used for Minecraft servers that are accessible from the Internet.
+
+**SecretSalt** is a random hash used to further obscure the internet address that's used as the user name when LanMode is disabled.  It is best to let this unique salt to be created automatically.
+
+![Flowchart](https://cloud.githubusercontent.com/assets/3842973/7850820/b4291a34-04ac-11e5-9ccb-131974ef5c84.png)

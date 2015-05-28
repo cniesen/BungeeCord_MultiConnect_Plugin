@@ -29,8 +29,13 @@ public class TestBase {
         return plugin;
     }
 
-    protected InetSocketAddress getInetSocketAddress() throws UnknownHostException {
-        byte[] ipAddress = new byte[]{10, 20, 56, 123};
+    protected InetSocketAddress getInetSocketAddress(boolean LanLoginUsers) throws UnknownHostException {
+        byte[] ipAddress;
+        if (LanLoginUsers) {
+            ipAddress = new byte[]{12, 118, 10, 114};
+        } else {
+            ipAddress = new byte[]{10, 20, 56, 123};
+        }
         InetAddress inetAddress = InetAddress.getByAddress("example.com", ipAddress);
         return new InetSocketAddress(inetAddress, 3333);
     }

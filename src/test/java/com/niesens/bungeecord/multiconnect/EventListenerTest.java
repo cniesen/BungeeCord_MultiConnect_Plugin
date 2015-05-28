@@ -1,5 +1,6 @@
 package com.niesens.bungeecord.multiconnect;
 
+import junit.framework.Assert;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.api.event.PreLoginEvent;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -21,53 +22,67 @@ import java.util.logging.Logger;
 
 public class EventListenerTest extends TestBase {
 
+    private enum ExpectedLoginNameType {
+        MOJANG_USER_NAME, INET_ADDRESS_HASH, LAN_IP, LAN_USER_NAME
+    }
+
     @Test
     public void testMultipleConnectionsUser() throws IOException, NoSuchAlgorithmException {
-        testing("SampleUser2", "login-multiconnect", false);
+        testing("SampleUser2", ExpectedLoginNameType.INET_ADDRESS_HASH);
     }
 
     @Test
     public void testMultipleConnectionsUserLan() throws IOException, NoSuchAlgorithmException {
         setLan();
-        testing("SampleUser2", "login-multiconnect", true);
+        testing("SampleUser2", ExpectedLoginNameType.LAN_IP);
     }
 
     @Test
     public void testNormalUser() throws IOException, NoSuchAlgorithmException {
-        testing("NormalUser", "login-normal", false);
+        testing("NormalUser", ExpectedLoginNameType.MOJANG_USER_NAME);
     }
 
     @Test
     public void testNormalUserLan() throws IOException, NoSuchAlgorithmException {
         setLan();
-        testing("NormalUser", "login-normal", false);
+        testing("NormalUser", ExpectedLoginNameType.MOJANG_USER_NAME);
     }
 
     @Test
     public void testMultipleConnectionsIp() throws IOException, NoSuchAlgorithmException {
         setMultiConnectIPs(Arrays.asList("10.10.10.10"));
-        testing("SampleUser2", "login-normal", false);
+        testing("SampleUser2", ExpectedLoginNameType.MOJANG_USER_NAME);
         setMultiConnectIPs(Arrays.asList("10.10.10.10", "10.20.56.123"));
-        testing("SampleUser2", "login-multiconnect", false);
-        testing("NormalUser", "login-normal", false);
+        testing("SampleUser2", ExpectedLoginNameType.INET_ADDRESS_HASH);
+        testing("NormalUser", ExpectedLoginNameType.MOJANG_USER_NAME);
     }
 
     @Test
     public void testMultipleConnectionsIpLan() throws IOException, NoSuchAlgorithmException {
         setLan();
         setMultiConnectIPs(Arrays.asList("10.10.10.10"));
-        testing("SampleUser2", "login-normal", true);
+        testing("SampleUser2", ExpectedLoginNameType.MOJANG_USER_NAME);
         setMultiConnectIPs(Arrays.asList("10.10.10.10", "10.20.56.123"));
-        testing("SampleUser2", "login-multiconnect", true);
-        testing("NormalUser", "login-normal", true);
+        testing("SampleUser2", ExpectedLoginNameType.LAN_IP);
+        testing("NormalUser", ExpectedLoginNameType.MOJANG_USER_NAME);
     }
 
-    private void testing(String testUser, String expectedLoginType, boolean expectLanMode) throws UnknownHostException, NoSuchAlgorithmException {
+    @Test
+    public void testMultipleConnectionLanUserName() throws IOException, NoSuchAlgorithmException {
+        setLan();
+        testing("SampleUser2", ExpectedLoginNameType.LAN_USER_NAME);
+    }
+
+    private void testing(String testUser, ExpectedLoginNameType expectedLoginNameType) throws UnknownHostException, NoSuchAlgorithmException {
         // Mock event
         PreLoginEvent preLoginEvent = PowerMockito.mock(PreLoginEvent.class);
         InitialHandler initialHandler = PowerMockito.mock(InitialHandler.class);
         Mockito.when(initialHandler.getName()).thenReturn(testUser);
-        Mockito.when(initialHandler.getAddress()).thenReturn(getInetSocketAddress());
+        if (expectedLoginNameType.equals(ExpectedLoginNameType.LAN_USER_NAME)) {
+            Mockito.when(initialHandler.getAddress()).thenReturn(getInetSocketAddress(true));
+        } else {
+            Mockito.when(initialHandler.getAddress()).thenReturn(getInetSocketAddress(false));
+        }
         LoginRequest loginRequest = PowerMockito.mock(LoginRequest.class);
         Mockito.when(initialHandler.getLoginRequest()).thenReturn(loginRequest);
         Mockito.when(preLoginEvent.getConnection()).thenReturn(initialHandler);
@@ -86,18 +101,24 @@ public class EventListenerTest extends TestBase {
         eventListener.onPreLogin(preLoginEvent);
 
         // Verify results
-        if (expectedLoginType.equals("login-multiconnect")) {
-            Mockito.verify(logger, Mockito.times(4)).info(Matchers.anyString());
-            Mockito.verify(initialHandler).setOnlineMode(false);
-            if (expectLanMode) {
-                Mockito.verify(loginRequest).setData("10.20.56.123");
-            } else {
-                Mockito.verify(loginRequest).setData("zVRYf6AvCi94REMB");
-            }
-        } else {
+        if (expectedLoginNameType.equals(ExpectedLoginNameType.MOJANG_USER_NAME)) {
             Mockito.verify(logger, Mockito.times(3)).info(Matchers.anyString());
             Mockito.verify(initialHandler, Mockito.never()).setOnlineMode(Mockito.anyBoolean());
             Mockito.verify(loginRequest, Mockito.never()).setData(testUser);
+        } else if (expectedLoginNameType.equals(ExpectedLoginNameType.INET_ADDRESS_HASH)) {
+            Mockito.verify(logger, Mockito.times(4)).info(Matchers.anyString());
+            Mockito.verify(initialHandler).setOnlineMode(false);
+            Mockito.verify(loginRequest).setData("zVRYf6AvCi94REMB");
+        } else if (expectedLoginNameType.equals(ExpectedLoginNameType.LAN_IP)) {
+            Mockito.verify(logger, Mockito.times(4)).info(Matchers.anyString());
+            Mockito.verify(initialHandler).setOnlineMode(false);
+            Mockito.verify(loginRequest).setData("10.20.56.123");
+        } else if (expectedLoginNameType.equals(ExpectedLoginNameType.LAN_USER_NAME)) {
+            Mockito.verify(logger, Mockito.times(4)).info(Matchers.anyString());
+            Mockito.verify(initialHandler).setOnlineMode(false);
+            Mockito.verify(loginRequest).setData("LittleMiner");
+        } else {
+            Assert.fail("Unknown expectedLoginNameType: " + expectedLoginNameType);
         }
     }
 
