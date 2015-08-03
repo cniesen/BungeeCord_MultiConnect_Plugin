@@ -30,6 +30,7 @@ Plugin Configuration
 --------------------
 
 ```
+AlwaysGenerateUsernames: false
 MultiConnectUsers:
   - SampleUser1
   - SampleUser2
@@ -44,6 +45,8 @@ LanUsersNames:
 ```
 On the first run the plugin will create the config.yml file if one doesn't exist already.  This makes configuration easy.  Start, log on once, shutdown, make configuration changes, and have fun.  By default no one is configured to benefit from the MultiConnect plugin. The config file is located at `bungeecord/plugins/BungeeCord MultiConnect Plugin`.
 
+**AlwaysGenerateUsernames** if set to true the *MultiConnectUsers* and *MultiConnectIPs* options are ignored. Regardless what IP and Mojang username is used the username is generated depending on the *LanMode*, *LanUserNames* and *SecretSalt* options.  This option is false by default.   
+
 **MultiConnectUsers** is the list of Mojang usernamess that are allowed to connect multiple times. Each user has to be on its own line and must be preceded by a space, dash, space. Users not in this list will sign in as a regular Mojang user.  By default this list is empty.
 
 **MultiConnectIPs** is a list of IPs from which clients are allowed to use the MultiConnect feature by signing in with a username in the MultiConnectUsers list.  Users connecting from other IPs will sign in as a regular Mojang user.  This list is empty by default which allows everybody to use the MultiConnect feature by signing in with a username in the MultiConnectUsers list.
@@ -57,4 +60,4 @@ If everybody will have a unique IP then then the LanMode can be set to true. The
 
 **SecretSalt** is a random hash used to further obscure the internet address that's used as the user name when LanMode is disabled.  It is best to let this unique salt to be created automatically.
 
-![Flowchart](https://cloud.githubusercontent.com/assets/3842973/7850820/b4291a34-04ac-11e5-9ccb-131974ef5c84.png)
+![flowchart](https://cloud.githubusercontent.com/assets/3842973/9028458/19601292-393f-11e5-88c3-bc2fd7a88bf3.png)

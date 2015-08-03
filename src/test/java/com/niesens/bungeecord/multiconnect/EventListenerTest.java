@@ -8,6 +8,7 @@ import net.md_5.bungee.api.plugin.PluginDescription;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.protocol.packet.LoginRequest;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
@@ -24,6 +25,13 @@ public class EventListenerTest extends TestBase {
 
     private enum ExpectedLoginNameType {
         MOJANG_USER_NAME, INET_ADDRESS_HASH, LAN_IP, LAN_USER_NAME
+    }
+
+    private int baseLogCount;
+
+    @Before
+    public void setUp() {
+        baseLogCount = 4;
     }
 
     @Test
@@ -73,6 +81,12 @@ public class EventListenerTest extends TestBase {
         testing("SampleUser2", ExpectedLoginNameType.LAN_USER_NAME);
     }
 
+    @Test
+    public void testAlwaysGenerateUsernames() throws IOException, NoSuchAlgorithmException {
+        setAlwaysGenerateUsernames();
+            testing("SampleUser2", ExpectedLoginNameType.INET_ADDRESS_HASH);
+    }
+
     private void testing(String testUser, ExpectedLoginNameType expectedLoginNameType) throws UnknownHostException, NoSuchAlgorithmException {
         // Mock event
         PreLoginEvent preLoginEvent = PowerMockito.mock(PreLoginEvent.class);
@@ -102,24 +116,33 @@ public class EventListenerTest extends TestBase {
 
         // Verify results
         if (expectedLoginNameType.equals(ExpectedLoginNameType.MOJANG_USER_NAME)) {
-            Mockito.verify(logger, Mockito.times(3)).info(Matchers.anyString());
+            Mockito.verify(logger, Mockito.times(baseLogCount)).info(Matchers.anyString());
             Mockito.verify(initialHandler, Mockito.never()).setOnlineMode(Mockito.anyBoolean());
             Mockito.verify(loginRequest, Mockito.never()).setData(testUser);
         } else if (expectedLoginNameType.equals(ExpectedLoginNameType.INET_ADDRESS_HASH)) {
-            Mockito.verify(logger, Mockito.times(4)).info(Matchers.anyString());
+            Mockito.verify(logger, Mockito.times(baseLogCount + 1)).info(Matchers.anyString());
             Mockito.verify(initialHandler).setOnlineMode(false);
             Mockito.verify(loginRequest).setData("zVRYf6AvCi94REMB");
         } else if (expectedLoginNameType.equals(ExpectedLoginNameType.LAN_IP)) {
-            Mockito.verify(logger, Mockito.times(4)).info(Matchers.anyString());
+            Mockito.verify(logger, Mockito.times(baseLogCount + 1)).info(Matchers.anyString());
             Mockito.verify(initialHandler).setOnlineMode(false);
             Mockito.verify(loginRequest).setData("10.20.56.123");
         } else if (expectedLoginNameType.equals(ExpectedLoginNameType.LAN_USER_NAME)) {
-            Mockito.verify(logger, Mockito.times(4)).info(Matchers.anyString());
+            Mockito.verify(logger, Mockito.times(baseLogCount + 1)).info(Matchers.anyString());
             Mockito.verify(initialHandler).setOnlineMode(false);
             Mockito.verify(loginRequest).setData("LittleMiner");
         } else {
             Assert.fail("Unknown expectedLoginNameType: " + expectedLoginNameType);
         }
+    }
+
+    private void setAlwaysGenerateUsernames() throws IOException {
+        Plugin plugin = mockPlugin();
+        Configuration configuration = ConfigurationUtils.loadConfiguration(plugin);
+        configuration.set("AlwaysGenerateUsernames", true);
+        ConfigurationUtils.saveConfiguration(plugin, configuration);
+
+        baseLogCount = 2;
     }
 
     private void setMultiConnectIPs(List multiConnectIPs) throws IOException {

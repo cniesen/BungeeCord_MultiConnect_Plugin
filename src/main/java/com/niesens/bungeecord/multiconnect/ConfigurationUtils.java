@@ -30,6 +30,14 @@ public class ConfigurationUtils {
         ConfigurationProvider.getProvider(YamlConfiguration.class).save(configuration, getConfigurationFile(plugin));
     }
 
+    public static boolean isAlwaysGenerateUsernames(Plugin plugin) {
+        try {
+            return ConfigurationUtils.loadConfiguration(plugin).getBoolean("AlwaysGenerateUsernames");
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     public static Set<String> getMultiConnectUsers(Plugin plugin) {
         try {
             return new HashSet<>(ConfigurationUtils.loadConfiguration(plugin).getStringList("MultiConnectUsers"));

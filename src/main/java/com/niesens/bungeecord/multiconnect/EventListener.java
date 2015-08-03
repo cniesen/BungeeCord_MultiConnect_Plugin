@@ -23,19 +23,26 @@ public class EventListener implements Listener {
     public void onPreLogin(PreLoginEvent event) throws NoSuchAlgorithmException {
         InitialHandler handler = (InitialHandler) event.getConnection();
         plugin.getLogger().info(handler.getName() + " from " + handler.getAddress() + " connected.");
-        Set<String> MultiConnectUsers = ConfigurationUtils.getMultiConnectUsers(plugin);
-        plugin.getLogger().info("Allowed MultiConnectUsers are: " + MultiConnectUsers);
-        Set<String> multiConnectIPs = ConfigurationUtils.getMultiConnectIPs(plugin);
-        plugin.getLogger().info("Allowed MultiConnectIPs are: " + (multiConnectIPs.isEmpty() ? "any" : multiConnectIPs));
 
-        // check if player is allowed to connect multiple times simultaneously
-        if (!MultiConnectUsers.contains(handler.getName())) {
-            return;
-        }
+        if (ConfigurationUtils.isAlwaysGenerateUsernames(plugin)) {
+            plugin.getLogger().info("AlwaysGenerateUsername: true");
 
-        // check if ip is restricted
-        if (!multiConnectIPs.isEmpty() && !multiConnectIPs.contains(handler.getAddress().getAddress().getHostAddress())) {
-            return;
+        } else {
+            plugin.getLogger().info("AlwaysGenerateUsername: false");
+            Set<String> MultiConnectUsers = ConfigurationUtils.getMultiConnectUsers(plugin);
+            plugin.getLogger().info("Allowed MultiConnectUsers are: " + MultiConnectUsers);
+            Set<String> multiConnectIPs = ConfigurationUtils.getMultiConnectIPs(plugin);
+            plugin.getLogger().info("Allowed MultiConnectIPs are: " + (multiConnectIPs.isEmpty() ? "any" : multiConnectIPs));
+
+            // check if player is allowed to connect multiple times simultaneously
+            if (!MultiConnectUsers.contains(handler.getName())) {
+                return;
+            }
+
+            // check if ip is restricted
+            if (!multiConnectIPs.isEmpty() && !multiConnectIPs.contains(handler.getAddress().getAddress().getHostAddress())) {
+                return;
+            }
         }
 
         String name;
